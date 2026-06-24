@@ -775,3 +775,440 @@ button { cursor: pointer; font-family: inherit; }
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Sección API de React ────────────────────────────────────────────────── */
+.badge-api {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.react-api-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  padding: 8px 0;
+}
+
+.react-api-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .react-api-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.react-api-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.react-api-card--wide {
+  grid-column: 1 / -1;
+}
+
+.api-icon { font-size: 1.4rem; flex-shrink: 0; margin-top: 2px; }
+
+.react-api-card > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.api-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.api-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.api-link {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* ── Modo oscuro ─────────────────────────────────────────────────────────── */
+/* Se activa cuando el <html> tiene la clase "tema-oscuro" */
+.tema-oscuro {
+  --primary:       #818cf8;
+  --primary-dark:  #6366f1;
+  --primary-light: #1e1b4b;
+  --secondary:     #9ca3af;
+  --success:       #34d399;
+  --danger:        #f87171;
+  --warning:       #fbbf24;
+  --bg:            #0f172a;
+  --surface:       #1e293b;
+  --border:        #334155;
+  --text:          #f1f5f9;
+  --text-muted:    #94a3b8;
+  --shadow:        0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md:     0 4px 6px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.25);
+  --shadow-lg:     0 10px 15px rgba(0,0,0,0.4), 0 4px 6px rgba(0,0,0,0.3);
+}
+
+/* Fondo del body en modo oscuro */
+.tema-oscuro body {
+  background: var(--bg);
+}
+
+/* Inputs y selects en modo oscuro */
+.tema-oscuro input,
+.tema-oscuro select,
+.tema-oscuro textarea {
+  background: #0f172a;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.tema-oscuro input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Auth page en modo oscuro */
+.tema-oscuro .auth-page {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+}
+
+.tema-oscuro .auth-hint {
+  background: #0f172a;
+}
+
+/* Tabla en modo oscuro */
+.tema-oscuro .data-table th {
+  background: #0f172a;
+}
+
+.tema-oscuro .data-table tbody tr:hover {
+  background: #263148;
+}
+
+/* Badges en modo oscuro */
+.tema-oscuro .badge-activo   { background: #064e3b; color: #6ee7b7; }
+.tema-oscuro .badge-inactivo { background: #7f1d1d; color: #fca5a5; }
+.tema-oscuro .badge-stock-ok  { background: #064e3b; color: #6ee7b7; }
+.tema-oscuro .badge-stock-bajo { background: #7f1d1d; color: #fca5a5; }
+.tema-oscuro .badge-categoria { background: #1e1b4b; color: #a5b4fc; }
+.tema-oscuro .badge-rol       { background: #1e1b4b; color: #a5b4fc; }
+.tema-oscuro .badge-api       { background: #431407; color: #fdba74; border-color: #9a3412; }
+
+/* Quick cards en modo oscuro */
+.tema-oscuro .quick-card {
+  background: #0f172a;
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.tema-oscuro .quick-card:hover {
+  background: #1e1b4b;
+  color: var(--primary);
+}
+
+/* React API cards en modo oscuro */
+.tema-oscuro .react-api-card {
+  background: #0f172a;
+  border-color: var(--border);
+}
+
+/* Detalle item en modo oscuro */
+.tema-oscuro .detalle-item,
+.tema-oscuro .info-item,
+.tema-oscuro .perfil-permisos {
+  background: #0f172a;
+}
+
+/* Usuario card en modo oscuro */
+.tema-oscuro .usuario-card {
+  background: var(--surface);
+}
+
+/* Perfil card en modo oscuro */
+.tema-oscuro .perfil-card {
+  background: var(--surface);
+}
+
+/* ── Botón de cambio de tema ─────────────────────────────────────────────── */
+.btn-tema {
+  background: none;
+  border: 1px solid var(--border);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+  flex-shrink: 0;
+}
+
+.btn-tema:hover {
+  background: var(--bg);
+  transform: rotate(20deg);
+}
+
+/* ── Conversor de moneda ─────────────────────────────────────────────────── */
+.conversor {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.conversor-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 160px;
+}
+
+.conversor-campo label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.conversor-campo input,
+.conversor-campo select {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 1rem;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+.conversor-campo input:focus,
+.conversor-campo select:focus {
+  border-color: var(--primary);
+}
+
+.conversor-input-group {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+  transition: border-color 0.15s;
+}
+
+.conversor-input-group:focus-within {
+  border-color: var(--primary);
+}
+
+.conversor-simbolo {
+  padding: 0 10px;
+  font-weight: 700;
+  color: var(--primary);
+  font-size: 0.9rem;
+  background: var(--primary-light);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  border-right: 1px solid var(--border);
+}
+
+.conversor-input-group input {
+  border: none;
+  border-radius: 0;
+  flex: 1;
+}
+
+.conversor-input-group input:focus {
+  box-shadow: none;
+}
+
+.conversor-flecha {
+  font-size: 1.5rem;
+  color: var(--primary);
+  padding-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.conversor-resultado {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 180px;
+  background: var(--primary-light);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+}
+
+.resultado-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.resultado-valor {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* Tasas rápidas */
+.tasas-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .tasas-grid { grid-template-columns: repeat(2, 1fr); }
+  .conversor  { flex-direction: column; }
+}
+
+.tasa-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+}
+
+.tasa-nombre {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.tasa-valor {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Modo oscuro para el conversor */
+.tema-oscuro .conversor,
+.tema-oscuro .tasa-card {
+  background: #0f172a;
+  border-color: var(--border);
+}
+
+.tema-oscuro .conversor-resultado {
+  background: #1e1b4b;
+  border-color: var(--primary);
+}
+
+.tema-oscuro .conversor-simbolo {
+  background: #1e1b4b;
+  border-color: var(--border);
+}
+
+/* ── Gestión de categorías ───────────────────────────────────────────────── */
+.cat-input-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.cat-input-row input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.9375rem;
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+}
+
+.cat-input-row input:focus {
+  border-color: var(--primary);
+}
+
+.cat-lista {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.cat-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.cat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cat-nombre {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--text);
+}
+
+.cat-en-uso {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.cat-vacia {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted);
+  background: var(--bg);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+}
+
+.cat-item .btn-delete:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.tema-oscuro .cat-item {
+  background: #0f172a;
+}

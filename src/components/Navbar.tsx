@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTema } from '../context/ThemeContext';
 
 const ROLES_LABEL: Record<string, string> = {
   admin: 'Administrador',
@@ -9,6 +10,7 @@ const ROLES_LABEL: Record<string, string> = {
 
 export default function Navbar() {
   const { usuario, logout } = useAuth();
+  const { oscuro, toggleTema } = useTema();
   const location = useLocation();
 
   const isActive = (path: string) => location.pathname.startsWith(path);
@@ -38,6 +40,15 @@ export default function Navbar() {
       </div>
 
       <div className="navbar-user">
+        {/* Botón de modo oscuro/claro */}
+        <button
+          className="btn-tema"
+          onClick={toggleTema}
+          title={oscuro ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+        >
+          {oscuro ? '☀️' : '🌙'}
+        </button>
+
         <Link to="/perfil" className="user-info">
           <div className="user-avatar">
             {usuario?.nombre.charAt(0).toUpperCase()}

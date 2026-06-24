@@ -3,12 +3,11 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import type { Producto } from '../types';
 
-const CATEGORIAS = ['Electrónica', 'Ropa', 'Alimentos', 'Hogar', 'Oficina', 'Herramientas', 'Otro'];
-
 interface FormProd {
   nombre: string;
   descripcion: string;
   categoria: string;
+  nuevaCategoria: string;
   precio: string;
   stock: string;
   stockMinimo: string;
@@ -18,36 +17,83 @@ interface FormProd {
 const FORM_VACIO: FormProd = {
   nombre: '',
   descripcion: '',
-  categoria: 'Electrónica',
+  categoria: '',
+  nuevaCategoria: '',
   precio: '',
   stock: '',
   stockMinimo: '5',
   proveedor: '',
 };
 
+// ── Helpers para categorías en localStorage ───────────────────────────────
+function leerCategorias(): string[] {
+  return JSON.parse(localStorage.getItem('stockpro_categorias') || '[]');
+}
+
+function guardarCategorias(lista: string[]) {
+  localStorage.setItem('stockpro_categorias', JSON.stringify(lista));
+}
+
 export default function Productos() {
   const { usuario } = useAuth();
   const [productos, setProductos] = useState<Producto[]>([]);
+  const [categorias, setCategorias] = useState<string[]>([]);
   const [filtro, setFiltro] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState('');
   const [mostrarForm, setMostrarForm] = useState(false);
+  const [mostrarGestCat, setMostrarGestCat] = useState(false);
   const [editando, setEditando] = useState<Producto | null>(null);
   const [form, setForm] = useState<FormProd>(FORM_VACIO);
   const [errores, setErrores] = useState<Partial<FormProd>>({});
   const [confirmElim, setConfirmElim] = useState<string | null>(null);
+  const [inputCategoria, setInputCategoria] = useState('');
+  const [errorCategoria, setErrorCategoria] = useState('');
 
-  // Cargar productos desde localStorage al montar
+  // Cargar productos y categorías desde localStorage al montar
   useEffect(() => {
     const guardados: Producto[] = JSON.parse(
       localStorage.getItem('stockpro_productos') || '[]'
     );
     setProductos(guardados);
+    setCategorias(leerCategorias());
   }, []);
 
-  // ── Guardar en localStorage cada vez que cambie la lista ──────────────────
+  // ── Guardar productos en localStorage ────────────────────────────────────
   function guardarLocal(lista: Producto[]) {
     localStorage.setItem('stockpro_productos', JSON.stringify(lista));
     setProductos(lista);
+  }
+
+  // ── Agregar nueva categoría ───────────────────────────────────────────────
+  function agregarCategoria() {
+    const nueva = inputCategoria.trim();
+    if (!nueva) {
+      setErrorCategoria('Escribe un nombre para la categoría.');
+      return;
+    }
+    const actuales = leerCategorias();
+    if (actuales.some(c => c.toLowerCase() === nueva.toLowerCase())) {
+      setErrorCategoria('Esa categoría ya existe.');
+      return;
+    }
+    const actualizadas = [...actuales, nueva];
+    guardarCategorias(actualizadas);
+    setCategorias(actualizadas);
+    setInputCategoria('');
+    setErrorCategoria('');
+  }
+
+  // ── Eliminar categoría ────────────────────────────────────────────────────
+  function eliminarCategoria(cat: string) {
+    const enUso = productos.some(p => p.categoria === cat);
+    if (enUso) {
+      setErrorCategoria(`No se puede eliminar "${cat}" porque hay productos que la usan.`);
+      return;
+    }
+    const actualizadas = leerCategorias().filter(c => c !== cat);
+    guardarCategorias(actualizadas);
+    setCategorias(actualizadas);
+    setErrorCategoria('');
   }
 
   // ── Filtrado combinado ────────────────────────────────────────────────────
@@ -66,6 +112,7 @@ export default function Productos() {
       nombre: p.nombre,
       descripcion: p.descripcion,
       categoria: p.categoria,
+      nuevaCategoria: '',
       precio: String(p.precio),
       stock: String(p.stock),
       stockMinimo: String(p.stockMinimo),
@@ -77,7 +124,7 @@ export default function Productos() {
 
   function abrirNuevo() {
     setEditando(null);
-    setForm(FORM_VACIO);
+    setForm({ ...FORM_VACIO, categoria: categorias[0] ?? '' });
     setMostrarForm(true);
     setErrores({});
   }
@@ -86,6 +133,8 @@ export default function Productos() {
   function validar(): boolean {
     const e: Partial<FormProd> = {};
     if (!form.nombre.trim()) e.nombre = 'El nombre es obligatorio.';
+    if (!form.categoria && !form.nuevaCategoria.trim())
+      e.categoria = 'Selecciona o escribe una categoría.';
     if (!form.precio || isNaN(Number(form.precio)) || Number(form.precio) < 0)
       e.precio = 'Ingresa un precio válido.';
     if (!form.stock || isNaN(Number(form.stock)) || Number(form.stock) < 0)
@@ -100,12 +149,25 @@ export default function Productos() {
     e.preventDefault();
     if (!validar()) return;
 
+    // Si escribió una categoría nueva, agregarla primero
+    let categoriaFinal = form.categoria;
+    if (form.nuevaCategoria.trim()) {
+      const nueva = form.nuevaCategoria.trim();
+      const actuales = leerCategorias();
+      if (!actuales.some(c => c.toLowerCase() === nueva.toLowerCase())) {
+        const actualizadas = [...actuales, nueva];
+        guardarCategorias(actualizadas);
+        setCategorias(actualizadas);
+      }
+      categoriaFinal = nueva;
+    }
+
     if (editando) {
       const actualizado: Producto = {
         ...editando,
         nombre: form.nombre.trim(),
         descripcion: form.descripcion.trim(),
-        categoria: form.categoria,
+        categoria: categoriaFinal,
         precio: Number(form.precio),
         stock: Number(form.stock),
         stockMinimo: Number(form.stockMinimo),
@@ -117,7 +179,7 @@ export default function Productos() {
         id: crypto.randomUUID(),
         nombre: form.nombre.trim(),
         descripcion: form.descripcion.trim(),
-        categoria: form.categoria,
+        categoria: categoriaFinal,
         precio: Number(form.precio),
         stock: Number(form.stock),
         stockMinimo: Number(form.stockMinimo),
@@ -132,7 +194,7 @@ export default function Productos() {
     setEditando(null);
   }
 
-  // ── Eliminar ──────────────────────────────────────────────────────────────
+  // ── Eliminar producto ─────────────────────────────────────────────────────
   function eliminar(id: string) {
     guardarLocal(productos.filter((p) => p.id !== id));
     setConfirmElim(null);
@@ -147,11 +209,18 @@ export default function Productos() {
           <h1>📦 Productos</h1>
           <p>Gestión de inventario</p>
         </div>
-        {canEdit && (
-          <button className="btn-primary" onClick={abrirNuevo}>
-            + Nuevo producto
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {canEdit && (
+            <button className="btn-secondary" onClick={() => { setMostrarGestCat(true); setErrorCategoria(''); }}>
+              🏷️ Categorías
+            </button>
+          )}
+          {canEdit && (
+            <button className="btn-primary" onClick={abrirNuevo}>
+              + Nuevo producto
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filtros */}
@@ -168,13 +237,77 @@ export default function Productos() {
           onChange={(e) => setCategoriaFiltro(e.target.value)}
         >
           <option value="">Todas las categorías</option>
-          {CATEGORIAS.map((c) => (
+          {categorias.map((c) => (
             <option key={c} value={c}>{c}</option>
           ))}
         </select>
       </div>
 
-      {/* Formulario */}
+      {/* Modal gestión de categorías */}
+      {mostrarGestCat && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h2>🏷️ Gestionar Categorías</h2>
+            <p style={{ marginBottom: '20px', fontSize: '0.875rem' }}>
+              Agrega o elimina categorías. No puedes eliminar una categoría que tenga productos asignados.
+            </p>
+
+            {/* Input nueva categoría */}
+            <div className="cat-input-row">
+              <input
+                type="text"
+                value={inputCategoria}
+                onChange={(e) => { setInputCategoria(e.target.value); setErrorCategoria(''); }}
+                placeholder="Nombre de la nueva categoría..."
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), agregarCategoria())}
+              />
+              <button className="btn-primary" onClick={agregarCategoria}>
+                + Agregar
+              </button>
+            </div>
+            {errorCategoria && <span className="field-error" style={{ marginBottom: '12px', display: 'block' }}>{errorCategoria}</span>}
+
+            {/* Lista de categorías existentes */}
+            {categorias.length === 0 ? (
+              <div className="cat-vacia">
+                <p>No hay categorías. Agrega la primera arriba.</p>
+              </div>
+            ) : (
+              <ul className="cat-lista">
+                {categorias.map((c) => {
+                  const enUso = productos.filter(p => p.categoria === c).length;
+                  return (
+                    <li key={c} className="cat-item">
+                      <div className="cat-info">
+                        <span className="cat-nombre">{c}</span>
+                        <span className="cat-en-uso">
+                          {enUso > 0 ? `${enUso} producto${enUso > 1 ? 's' : ''}` : 'Sin productos'}
+                        </span>
+                      </div>
+                      <button
+                        className="btn-delete"
+                        onClick={() => eliminarCategoria(c)}
+                        title={enUso > 0 ? 'No se puede eliminar, tiene productos' : 'Eliminar categoría'}
+                        disabled={enUso > 0}
+                      >
+                        🗑️
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            <div className="modal-actions" style={{ marginTop: '20px' }}>
+              <button className="btn-primary" onClick={() => { setMostrarGestCat(false); setErrorCategoria(''); }}>
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Formulario nuevo/editar producto */}
       {mostrarForm && (
         <div className="modal-overlay">
           <div className="modal">
@@ -191,13 +324,28 @@ export default function Productos() {
               </div>
 
               <div className="form-group">
-                <label>Categoría</label>
-                <select
-                  value={form.categoria}
-                  onChange={(e) => setForm((f) => ({ ...f, categoria: e.target.value }))}
-                >
-                  {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <label>Categoría *</label>
+                {categorias.length === 0 ? (
+                  <p className="field-error" style={{ marginTop: 4 }}>
+                    No hay categorías. Cierra este formulario y crea una primero.
+                  </p>
+                ) : (
+                  <select
+                    value={form.categoria}
+                    onChange={(e) => setForm((f) => ({ ...f, categoria: e.target.value, nuevaCategoria: '' }))}
+                  >
+                    <option value="">Selecciona una categoría...</option>
+                    {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                )}
+                <input
+                  type="text"
+                  value={form.nuevaCategoria}
+                  onChange={(e) => setForm((f) => ({ ...f, nuevaCategoria: e.target.value, categoria: '' }))}
+                  placeholder="O escribe una nueva categoría..."
+                  style={{ marginTop: '6px' }}
+                />
+                {errores.categoria && <span className="field-error">{errores.categoria}</span>}
               </div>
 
               <div className="form-group span-2">
@@ -264,7 +412,7 @@ export default function Productos() {
         </div>
       )}
 
-      {/* Modal de confirmación eliminación */}
+      {/* Modal confirmación eliminación producto */}
       {confirmElim && (
         <div className="modal-overlay">
           <div className="modal modal--sm">
