@@ -5,130 +5,90 @@ import {
   useEffect,
   type ReactNode,
 } from 'react';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  type User as FirebaseUser,
+} from 'firebase/auth';
+import { auth } from '../firebase/firebase';
 import type { SessionUser, User } from '../types';
 
-// ─── Usuarios predefinidos (simulan la "base de datos" inicial) ───────────────
-const USUARIOS_INICIALES: User[] = [
-  {
-    id: '1',
-    nombre: 'Admin',
-    apellido: 'Sistema',
-    email: 'admin@stockpro.cl',
-    password: 'admin123',
-    rol: 'admin',
-    fechaRegistro: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    nombre: 'María',
-    apellido: 'González',
-    email: 'vendedor@stockpro.cl',
-    password: 'venta123',
-    rol: 'vendedor',
-    fechaRegistro: new Date().toISOString(),
-  },
-];
-
-// ─── Tipos del contexto ───────────────────────────────────────────────────────
 interface AuthContextType {
   usuario: SessionUser | null;
-  login: (email: string, password: string) => boolean;
-  logout: () => void;
-  registrar: (datos: Omit<User, 'id' | 'fechaRegistro'>) => { ok: boolean; error?: string };
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  registrar: (datos: Omit<User, 'id' | 'fechaRegistro'>) => Promise<{ ok: boolean; error?: string }>;
   usuarios: User[];
   cargando: boolean;
 }
 
-// ─── Creación del contexto ────────────────────────────────────────────────────
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// ─── Hook personalizado para consumir el contexto ─────────────────────────────
 export function useAuth(): AuthContextType {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth debe usarse dentro de <AuthProvider>');
   return ctx;
 }
 
-// ─── Provider ─────────────────────────────────────────────────────────────────
+function mapFirebaseUser(user: FirebaseUser): SessionUser {
+  return {
+    id: user.uid,
+    nombre: user.displayName?.split(' ')[0] || 'Usuario',
+    apellido: user.displayName?.split(' ').slice(1).join(' ') || '',
+    email: user.email || '',
+    rol: 'vendedor',
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<SessionUser | null>(null);
   const [usuarios, setUsuarios] = useState<User[]>([]);
   const [cargando, setCargando] = useState(true);
 
-  // Al montar: carga sesión activa y lista de usuarios desde localStorage
   useEffect(() => {
-    // Inicializar usuarios predefinidos si no existen
-    const usersGuardados = localStorage.getItem('stockpro_usuarios');
-    if (!usersGuardados) {
-      localStorage.setItem('stockpro_usuarios', JSON.stringify(USUARIOS_INICIALES));
-      setUsuarios(USUARIOS_INICIALES);
-    } else {
-      setUsuarios(JSON.parse(usersGuardados));
-    }
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUsuario(mapFirebaseUser(firebaseUser));
+      } else {
+        setUsuario(null);
+      }
 
-    // Restaurar sesión
-    const sesion = localStorage.getItem('stockpro_sesion');
-    if (sesion) {
-      setUsuario(JSON.parse(sesion));
-    }
+      setCargando(false);
+    });
 
-    setCargando(false);
+    return () => unsubscribe();
   }, []);
 
-  // ── Login ──────────────────────────────────────────────────────────────────
-  function login(email: string, password: string): boolean {
-    const usersActuales: User[] = JSON.parse(
-      localStorage.getItem('stockpro_usuarios') || '[]'
-    );
-    const encontrado = usersActuales.find(
-      (u) => u.email === email && u.password === password
-    );
-    if (!encontrado) return false;
-
-    const sesion: SessionUser = {
-      id: encontrado.id,
-      nombre: encontrado.nombre,
-      apellido: encontrado.apellido,
-      email: encontrado.email,
-      rol: encontrado.rol,
-      avatar: encontrado.avatar,
-    };
-
-    localStorage.setItem('stockpro_sesion', JSON.stringify(sesion));
-    setUsuario(sesion);
-    return true;
+  async function login(email: string, password: string): Promise<boolean> {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      return true;
+    } catch (error) {
+      console.error('Error al iniciar sesión:', error);
+      return false;
+    }
   }
 
-  // ── Logout ─────────────────────────────────────────────────────────────────
-  function logout(): void {
-    localStorage.removeItem('stockpro_sesion');
+  async function logout(): Promise<void> {
+    await signOut(auth);
     setUsuario(null);
   }
 
-  // ── Registro de nuevo usuario ──────────────────────────────────────────────
-  function registrar(
+  async function registrar(
     datos: Omit<User, 'id' | 'fechaRegistro'>
-  ): { ok: boolean; error?: string } {
-    const usersActuales: User[] = JSON.parse(
-      localStorage.getItem('stockpro_usuarios') || '[]'
-    );
-
-    const emailExiste = usersActuales.some((u) => u.email === datos.email);
-    if (emailExiste) {
-      return { ok: false, error: 'Ya existe un usuario con ese email.' };
+  ): Promise<{ ok: boolean; error?: string }> {
+    try {
+      await createUserWithEmailAndPassword(auth, datos.email, datos.password);
+      return { ok: true };
+    } catch (error) {
+      console.error('Error al registrar:', error);
+      return {
+        ok: false,
+        error: 'No se pudo registrar el usuario. Revisa el correo o la contraseña.',
+      };
     }
-
-    const nuevoUsuario: User = {
-      ...datos,
-      id: crypto.randomUUID(),
-      fechaRegistro: new Date().toISOString(),
-    };
-
-    const actualizados = [...usersActuales, nuevoUsuario];
-    localStorage.setItem('stockpro_usuarios', JSON.stringify(actualizados));
-    setUsuarios(actualizados);
-
-    return { ok: true };
   }
 
   return (
