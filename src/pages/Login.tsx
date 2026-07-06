@@ -11,13 +11,12 @@ export default function Login() {
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
 
-  // Si ya hay sesión activa, redirige al dashboard
   if (usuario) {
     navigate('/dashboard', { replace: true });
     return null;
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
 
@@ -25,22 +24,23 @@ export default function Login() {
       setError('El email es obligatorio.');
       return;
     }
+
     if (!password) {
       setError('La contraseña es obligatoria.');
       return;
     }
 
     setCargando(true);
-    // Pequeño delay para simular autenticación
-    setTimeout(() => {
-      const ok = login(email.trim(), password);
-      if (ok) {
-        navigate('/dashboard', { replace: true });
-      } else {
-        setError('Email o contraseña incorrectos.');
-      }
-      setCargando(false);
-    }, 400);
+
+    const ok = await login(email.trim().toLowerCase(), password);
+
+    if (ok) {
+      navigate('/dashboard', { replace: true });
+    } else {
+      setError('Email o contraseña incorrectos.');
+    }
+
+    setCargando(false);
   }
 
   return (
@@ -88,16 +88,9 @@ export default function Login() {
           </button>
 
           <p className="auth-link">
-            ¿No tienes cuenta?{' '}
-            <Link to="/registro">Regístrate aquí</Link>
+            ¿No tienes cuenta? <Link to="/registro">Regístrate aquí</Link>
           </p>
         </form>
-
-        <div className="auth-hint">
-          <p><strong>Credenciales de prueba:</strong></p>
-          <p>👑 admin@stockpro.cl / admin123</p>
-          <p>🛒 vendedor@stockpro.cl / venta123</p>
-        </div>
       </div>
     </div>
   );

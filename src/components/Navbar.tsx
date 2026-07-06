@@ -58,7 +58,13 @@ export default function Navbar() {
             <span className="user-role">{ROLES_LABEL[usuario?.rol ?? ''] ?? usuario?.rol}</span>
           </div>
         </Link>
-        <button className="btn-logout" onClick={logout} title="Cerrar sesión">
+        <button
+          className="btn-logout"
+          onClick={async () => {
+            await logout();
+          }}
+          title="Cerrar sesión"
+        >
           🚪 Salir
         </button>
       </div>

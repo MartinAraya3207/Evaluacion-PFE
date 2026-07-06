@@ -21,7 +21,7 @@ interface FormErrors {
 }
 
 export default function Registro() {
-  const { registrar, login } = useAuth();
+  const { registrar } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState<FormData>({
@@ -32,13 +32,14 @@ export default function Registro() {
     confirmarPassword: '',
     rol: 'vendedor',
   });
+
   const [errores, setErrores] = useState<FormErrors>({});
   const [errorGeneral, setErrorGeneral] = useState('');
   const [exitoso, setExitoso] = useState(false);
+  const [cargando, setCargando] = useState(false);
 
   function actualizar(campo: keyof FormData, valor: string) {
     setForm((prev) => ({ ...prev, [campo]: valor }));
-    // Limpiar error del campo al escribir
     setErrores((prev) => ({ ...prev, [campo]: undefined }));
   }
 
@@ -47,16 +48,19 @@ export default function Registro() {
 
     if (!form.nombre.trim()) nuevosErrores.nombre = 'El nombre es obligatorio.';
     if (!form.apellido.trim()) nuevosErrores.apellido = 'El apellido es obligatorio.';
+
     if (!form.email.trim()) {
       nuevosErrores.email = 'El email es obligatorio.';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       nuevosErrores.email = 'El email no tiene un formato válido.';
     }
+
     if (!form.password) {
       nuevosErrores.password = 'La contraseña es obligatoria.';
     } else if (form.password.length < 6) {
       nuevosErrores.password = 'La contraseña debe tener al menos 6 caracteres.';
     }
+
     if (form.password !== form.confirmarPassword) {
       nuevosErrores.confirmarPassword = 'Las contraseñas no coinciden.';
     }
@@ -65,13 +69,15 @@ export default function Registro() {
     return Object.keys(nuevosErrores).length === 0;
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setErrorGeneral('');
 
     if (!validar()) return;
 
-    const resultado = registrar({
+    setCargando(true);
+
+    const resultado = await registrar({
       nombre: form.nombre.trim(),
       apellido: form.apellido.trim(),
       email: form.email.trim().toLowerCase(),
@@ -79,15 +85,16 @@ export default function Registro() {
       rol: form.rol,
     });
 
+    setCargando(false);
+
     if (!resultado.ok) {
       setErrorGeneral(resultado.error ?? 'Error al registrar usuario.');
       return;
     }
 
     setExitoso(true);
-    // Iniciar sesión automáticamente tras registro
+
     setTimeout(() => {
-      login(form.email.trim().toLowerCase(), form.password);
       navigate('/dashboard', { replace: true });
     }, 1200);
   }
@@ -120,6 +127,7 @@ export default function Registro() {
                   value={form.nombre}
                   onChange={(e) => actualizar('nombre', e.target.value)}
                   placeholder="Juan"
+                  disabled={cargando}
                 />
                 {errores.nombre && <span className="field-error">{errores.nombre}</span>}
               </div>
@@ -132,6 +140,7 @@ export default function Registro() {
                   value={form.apellido}
                   onChange={(e) => actualizar('apellido', e.target.value)}
                   placeholder="Pérez"
+                  disabled={cargando}
                 />
                 {errores.apellido && <span className="field-error">{errores.apellido}</span>}
               </div>
@@ -146,6 +155,7 @@ export default function Registro() {
                 onChange={(e) => actualizar('email', e.target.value)}
                 placeholder="juan@empresa.cl"
                 autoComplete="email"
+                disabled={cargando}
               />
               {errores.email && <span className="field-error">{errores.email}</span>}
             </div>
@@ -156,6 +166,7 @@ export default function Registro() {
                 id="rol"
                 value={form.rol}
                 onChange={(e) => actualizar('rol', e.target.value as UserRole)}
+                disabled={cargando}
               >
                 <option value="vendedor">Vendedor</option>
                 <option value="bodeguero">Bodeguero</option>
@@ -173,6 +184,7 @@ export default function Registro() {
                   onChange={(e) => actualizar('password', e.target.value)}
                   placeholder="Mín. 6 caracteres"
                   autoComplete="new-password"
+                  disabled={cargando}
                 />
                 {errores.password && <span className="field-error">{errores.password}</span>}
               </div>
@@ -186,6 +198,7 @@ export default function Registro() {
                   onChange={(e) => actualizar('confirmarPassword', e.target.value)}
                   placeholder="Repite la contraseña"
                   autoComplete="new-password"
+                  disabled={cargando}
                 />
                 {errores.confirmarPassword && (
                   <span className="field-error">{errores.confirmarPassword}</span>
@@ -193,13 +206,12 @@ export default function Registro() {
               </div>
             </div>
 
-            <button type="submit" className="btn-primary btn-full">
-              Crear Cuenta
+            <button type="submit" className="btn-primary btn-full" disabled={cargando}>
+              {cargando ? 'Creando cuenta...' : 'Crear Cuenta'}
             </button>
 
             <p className="auth-link">
-              ¿Ya tienes cuenta?{' '}
-              <Link to="/login">Iniciar sesión</Link>
+              ¿Ya tienes cuenta? <Link to="/login">Iniciar sesión</Link>
             </p>
           </form>
         )}
