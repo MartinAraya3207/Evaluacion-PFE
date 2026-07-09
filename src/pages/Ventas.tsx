@@ -1,5 +1,15 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useAuth } from '../context/AuthContext';
+import {
+  obtenerVentas,
+  crearVenta,
+  eliminarVenta as eliminarVentaFirestore,
+} from '../services/ventaService';
+
+import {
+  obtenerProductos,
+  actualizarProducto,
+} from '../services/productoService';
 import type { Producto, Venta } from '../types';
 
 interface FormVenta {
@@ -21,16 +31,21 @@ export default function Ventas() {
   const [confirmElim, setConfirmElim] = useState<string | null>(null);
 
   useEffect(() => {
-    const v: Venta[] = JSON.parse(localStorage.getItem('stockpro_ventas') || '[]');
-    const p: Producto[] = JSON.parse(localStorage.getItem('stockpro_productos') || '[]');
-    setVentas(v.reverse()); // más recientes primero
-    setProductos(p.filter((prod) => prod.activo && prod.stock > 0));
+    async function cargarDatos() {
+      const ventasFirestore = await obtenerVentas();
+      const productosFirestore = await obtenerProductos();
+
+      setVentas(ventasFirestore.reverse());
+      setProductos(
+        productosFirestore.filter(
+          (p) => p.activo && p.stock > 0
+        )
+      );
+    }
+
+    cargarDatos();
   }, []);
 
-  function guardarVentas(lista: Venta[]) {
-    localStorage.setItem('stockpro_ventas', JSON.stringify([...lista].reverse()));
-    setVentas(lista);
-  }
 
   const ventasFiltradas = ventas.filter(
     (v) =>
@@ -53,7 +68,7 @@ export default function Ventas() {
     return Object.keys(e).length === 0;
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!validar()) return;
 
@@ -74,33 +89,32 @@ export default function Ventas() {
     };
 
     // Actualizar stock del producto
-    const productosActuales: Producto[] = JSON.parse(
-      localStorage.getItem('stockpro_productos') || '[]'
-    );
-    const prodActualizados = productosActuales.map((p) =>
-      p.id === prod.id ? { ...p, stock: p.stock - cantidad } : p
-    );
-    localStorage.setItem('stockpro_productos', JSON.stringify(prodActualizados));
-    setProductos(prodActualizados.filter((p) => p.activo && p.stock > 0));
+    await actualizarProducto(prod.id, {
+      stock: prod.stock - cantidad,
+    });
 
-    const ventasActuales: Venta[] = JSON.parse(
-      localStorage.getItem('stockpro_ventas') || '[]'
+    await crearVenta(nuevaVenta);
+
+    const ventasFirestore = await obtenerVentas();
+    const productosFirestore = await obtenerProductos();
+
+    setVentas(ventasFirestore.reverse());
+    setProductos(
+      productosFirestore.filter(
+        (p) => p.activo && p.stock > 0
+      )
     );
-    const nuevasVentas = [...ventasActuales, nuevaVenta];
-    localStorage.setItem('stockpro_ventas', JSON.stringify(nuevasVentas));
-    setVentas([nuevaVenta, ...ventas]);
 
     setMostrarForm(false);
     setForm(FORM_VACIO);
   }
 
-  function eliminarVenta(id: string) {
-    const ventasActuales: Venta[] = JSON.parse(
-      localStorage.getItem('stockpro_ventas') || '[]'
-    );
-    const actualizadas = ventasActuales.filter((v) => v.id !== id);
-    localStorage.setItem('stockpro_ventas', JSON.stringify(actualizadas));
-    setVentas(ventas.filter((v) => v.id !== id));
+  async function eliminarVenta(id: string) {
+    await eliminarVentaFirestore(id);
+
+    const ventasFirestore = await obtenerVentas();
+
+    setVentas(ventasFirestore.reverse());
     setConfirmElim(null);
   }
 

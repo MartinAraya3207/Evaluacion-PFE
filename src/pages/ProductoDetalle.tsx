@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import type { Producto } from '../types';
+import { obtenerProductos } from '../services/productoService';
 
 export default function ProductoDetalle() {
   const { id } = useParams<{ id: string }>();
@@ -8,11 +9,13 @@ export default function ProductoDetalle() {
   const [producto, setProducto] = useState<Producto | null>(null);
 
   useEffect(() => {
-    const productos: Producto[] = JSON.parse(
-      localStorage.getItem('stockpro_productos') || '[]'
-    );
-    const encontrado = productos.find((p) => p.id === id) ?? null;
-    setProducto(encontrado);
+    async function cargarProducto() {
+      const productos = await obtenerProductos();
+      const encontrado = productos.find((p) => p.id === id) ?? null;
+      setProducto(encontrado);
+    }
+
+    cargarProducto();
   }, [id]);
 
   if (!producto) {
